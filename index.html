@@ -384,68 +384,38 @@
             if(state.history.length > 50) state.history.shift();
         }
 
-        // ================= 云端双端同步核心逻辑 =================
-        // 使用免费开放的公共 Key-Value 存储 API 实现免账户跨端互通
-        const BASE_SYNC_URL = "https://keyvalue.immanuel.co/api/keyvalue";
+ // ================= 物理备份/恢复机制 (绝对成功) =================
 
-        async function uploadCloudData() {
-            const token = document.getElementById("syncToken").value.trim();
-            if(!token || token.length < 6) {
-                alert("请输入至少6位以上的专属同步暗号，保证数据不与他人冲突！");
-                return;
-            }
-            logEvent(`🌐 正在向云端备用防线传输数据...`);
-            renderUI();
+        function uploadCloudData() {
+            // 将整个 state 对象转为压缩的 Base64 文本，方便复制
+            const dataStr = JSON.stringify(state);
+            const encoded = btoa(unescape(encodeURIComponent(dataStr)));
             
-            try {
-                const response = await fetch(`${BASE_SYNC_URL}/${token}/cyber_data`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(state)
-                });
-                if(response.ok) {
-                    localStorage.setItem("haoran_sync_token", token);
-                    alert("📤 云端数据同步锁生成成功！iPhone 端现在可以拉取同步了！");
-                    logEvent(`🌐 [云同步成功] 数据已备份至节点: ${token}`);
-                } else {
-                    alert("云端传输失败，请稍后重试。");
-                }
-            } catch (error) {
-                console.error(error);
-                alert("网络连接异常，无法连通云端加密信道。");
-            }
-            renderUI();
+            // 弹出一个输入框，直接把数据展示给你，你复制它
+            const copyArea = prompt("📤 数据已打包（请复制以下代码，保存到手机备忘录或微信发送给手机）：", encoded);
+            
+            // 同时存入本地
+            const token = document.getElementById("syncToken").value.trim();
+            if(token) localStorage.setItem("haoran_sync_token", token);
+            alert("数据已打包！复制上面的文本，到另一台设备点“同步”按钮粘贴进去即可。");
         }
 
-        async function downloadCloudData() {
-            const token = document.getElementById("syncToken").value.trim();
-            if(!token) {
-                alert("请输入你在另一端设置的专属同步暗号！");
-                return;
-            }
-            logEvent(`🌐 正在从云端信道提取数据包...`);
-            renderUI();
+        function downloadCloudData() {
+            // 让你输入刚才复制的备份码
+            const encoded = prompt("📥 请粘贴从另一端复制的备份数据码：");
+            
+            if(!encoded) return;
 
             try {
-                const response = await fetch(`${BASE_SYNC_URL}/${token}/cyber_data`);
-                if(response.ok) {
-                    const cloudText = await response.text();
-                    if(cloudText && cloudText !== "Key not found") {
-                        state = JSON.parse(cloudText);
-                        saveLocal();
-                        alert("📥 核心算力池数据同步完成！双端状态已完美对齐！");
-                        logEvent(`🌐 [数据拉取成功] 已成功对齐云端镜像。`);
-                    } else {
-                        alert("云端未找到该暗号对应的有效数据包，请检查暗号是否在PC端上传过。");
-                    }
-                } else {
-                    alert("拉取数据失败，请确认网络环境。");
-                }
-            } catch (error) {
-                console.error(error);
-                alert("云端信道遭遇阻塞，读取失败。");
+                // 解码并还原
+                const decoded = decodeURIComponent(escape(atob(encoded)));
+                state = JSON.parse(decoded);
+                saveLocal();
+                renderUI();
+                alert("📥 同步成功！数据已完美接轨。");
+            } catch (e) {
+                alert("❌ 备份码格式错误，请检查是否完整复制！");
             }
-            renderUI();
         }
     </script>
 </body>
