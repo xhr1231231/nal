@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>⚡ 0854 核心算力控制台 v4.0 - 双端同步版</title>
+    <!-- 引入 Tailwind CSS 构建赛博暗黑UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0b0f19; font-family: 'Microsoft YaHei', sans-serif; }
+        .cyber-panel { background-color: #131a2e; border: 1px solid #1f294d; }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen pb-10">
+
+    <!-- 顶部 Header -->
+    <header class="cyber-panel mx-4 mt-4 p-4 rounded-lg border-emerald-500/30 border flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-bold text-emerald-400">⚡ 0854 核心算力控制台 v4.0</h1>
+            <p class="text-xs text-slate-400 mt-1">目标：西南交大交通运输 · 二战命格破局</p>
+        </div>
+        <div class="text-right">
+            <span class="text-sm font-semibold px-2 py-1 bg-slate-800 rounded text-slate-300">玩家: 徐浩然</span>
+        </div>
+    </header>
+
+    <!-- 云端数据同步中心 -->
+    <section class="cyber-panel mx-4 mt-4 p-4 rounded-lg border-cyan-500/30 border">
+        <h2 class="text-sm font-bold text-cyan-400 mb-2">🌐 双端数据同步中心 (PC ⇄ iOS)</h2>
+        <div class="flex flex-col sm:flex-row gap-2">
+            <input type="text" id="syncToken" placeholder="输入你的专属同步暗号 (例如: haoran_secret_710)" class="bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-emerald-400 flex-grow focus:outline-none focus:border-cyan-400">
+            <div class="flex gap-2">
+                <button onclick="uploadCloudData()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-4 py-2 rounded text-xs transition flex-1">📤 上传至云端</button>
+                <button onclick="downloadCloudData()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded text-xs transition flex-1">📥 从云端同步</button>
+            </div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-2">※ 提示：在 iPhone 和 PC 上输入相同的暗号，点击“从云端同步”即可打通数据。每次结算后记得点击“上传”。</p>
+    </section>
+
+    <!-- 主体响应式布局 -->
+    <main class="mx-4 mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        <!-- 左侧/上方：核心数据监控面板 -->
+        <div class="md:col-span-1 flex flex-col gap-4">
+            <div class="cyber-panel p-4 rounded-lg">
+                <h2 class="text-sm font-bold text-cyan-400 mb-3">📊 实时核心数据监控</h2>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center bg-slate-950/60 p-2 rounded">
+                        <span class="text-xs text-slate-400">持续控能连击</span>
+                        <span id="lblStreak" class="text-sm font-bold text-emerald-400">0 天</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-950/60 p-2 rounded">
+                        <span class="text-xs text-slate-400">本周算力进度</span>
+                        <span id="lblWeekCp" class="text-base font-bold text-cyan-400">0 CP</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-950/60 p-2 rounded">
+                        <span class="text-xs text-slate-400">月大幕总算力</span>
+                        <span id="lblMonthCp" class="text-sm font-bold text-slate-200">0 CP</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-amber-500/10 border border-amber-500/20 p-2 rounded">
+                        <span class="text-xs text-amber-400 font-bold">天梯段位</span>
+                        <span id="lblLevel" class="text-xs font-bold text-amber-300">青铜二战学者 🥉</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 本周轨迹 -->
+            <div class="cyber-panel p-4 rounded-lg">
+                <h2 class="text-sm font-bold text-slate-300 mb-3">📅 本周轨迹矩阵</h2>
+                <div class="grid grid-cols-4 gap-2" id="matrixContainer">
+                    <!-- JS动态渲染 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 中间：今日副本任务 -->
+        <div class="md:col-span-1 cyber-panel p-4 rounded-lg flex flex-col justify-between">
+            <div>
+                <h2 class="text-sm font-bold text-emerald-400 mb-3">🔥 今日副本任务结算</h2>
+                
+                <!-- 作息铁律防线 -->
+                <div class="border border-amber-500/30 bg-amber-500/5 rounded p-3 mb-4">
+                    <span class="text-xs font-bold text-amber-400 block mb-2">🌙 23:30 - 07:10 作息铁律防线</span>
+                    <label class="flex items-center space-x-2 text-xs text-emerald-400 mb-2 cursor-pointer">
+                        <input type="radio" name="sleepStatus" value="ok" class="form-radio text-emerald-500 bg-slate-950 border-slate-700">
+                        <span>准时达成 (+20 CP)</span>
+                    </label>
+                    <label class="flex items-center space-x-2 text-xs text-rose-500 cursor-pointer">
+                        <input type="radio" name="sleepStatus" value="fail" class="form-radio text-rose-500 bg-slate-950 border-slate-700">
+                        <span>失控重罚 (-40 CP & 连击中断)</span>
+                    </label>
+                    <label class="flex items-center space-x-2 text-xs text-slate-400 mt-2 pt-2 border-t border-slate-800 cursor-pointer">
+                        <input type="radio" name="sleepStatus" value="none" checked class="form-radio text-slate-500 bg-slate-950 border-slate-700">
+                        <span>未到打卡时间 / 休息日</span>
+                    </label>
+                </div>
+
+                <!-- 课业核心任务 -->
+                <span class="text-xs font-bold text-slate-400 block mb-2">📚 日常核心课业：</span>
+                <div class="space-y-2" id="taskContainer">
+                    <!-- JS动态渲染 -->
+                </div>
+
+                <!-- 日期补记 -->
+                <div class="mt-4 p-2 bg-slate-950/40 border border-slate-800 rounded flex gap-4 items-center justify-center">
+                    <span class="text-xs text-slate-400">结算目标:</span>
+                    <label class="text-xs space-x-1"><input type="radio" name="targetDay" value="today" checked> <span>今天</span></label>
+                    <label class="text-xs space-x-1"><input type="radio" name="targetDay" value="yesterday"> <span>昨天(凌晨补记)</span></label>
+                </div>
+            </div>
+
+            <button onclick="submitDailyQuests()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg text-sm mt-4 shadow-lg shadow-emerald-900/20 transition">
+                ⚡ 传输数据 · 结算日算力
+            </button>
+        </div>
+
+        <!-- 右侧：商城与熔断 -->
+        <div class="md:col-span-1 flex flex-col gap-4">
+            <div class="cyber-panel p-4 rounded-lg">
+                <h2 class="text-sm font-bold text-cyan-400 mb-3">🛒 时间块商城（当周权限消费）</h2>
+                <div class="space-y-2" id="rewardContainer">
+                    <!-- JS动态渲染 -->
+                </div>
+            </div>
+
+            <div class="border border-rose-500/40 bg-rose-950/10 p-4 rounded-lg">
+                <h2 class="text-sm font-bold text-rose-500 mb-2">🚨 欲望防线过载熔断</h2>
+                <button onclick="triggerPunishment()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-2.5 rounded text-xs transition">
+                    🚨 发生过载突破（重大破戒 -150 CP） 🚨
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部历史日志面板 -->
+    <footer class="cyber-panel mx-4 mt-4 p-4 rounded-lg">
+        <h2 class="text-xs font-bold text-emerald-400 mb-2">📟 量子历史日志输出</h2>
+        <div id="logPanel" class="bg-slate-950 p-3 rounded font-mono text-xs text-emerald-500/80 h-28 overflow-y-auto space-y-1">
+            <!-- 日志动态注入 -->
+        </div>
+    </footer>
+
+    <script>
+        // 初始化核心状态数据
+        let state = {
+            name: "徐浩然",
+            total_cp: 0, weekly_cp: 0, monthly_cp: 0, streak_days: 0,
+            level: "青铜二战学者 🥉",
+            last_log_week: "", last_log_month: "",
+            weekly_matrix: { "Mon":[], "Tue":[], "Wed":[], "Thu":[], "Fri":[], "Sat":[], "Sun":[] },
+            history: ["系统初始化：0854 双端防线数据链路已就绪。"]
+        };
+
+        const weekdayKeys = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        const weekdayCn = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+        
+        const dailyQuests = [
+            { id: "q1", text: "清心寡欲 (强火命格 · 屏蔽诱惑)", pt: 30 },
+            { id: "q2", text: "数学二深耕 (死磕真题/习题满3h)", pt: 30 },
+            { id: "q3", text: "信号与系统 (攻克重点概念/题目2h)", pt: 20 },
+            { id: "q4", text: "硬核泵感 (严格执行当日健身/有氧)", pt: 20 },
+            { id: "q5", text: "深度复盘 (梳理错题并精细化明天)", pt: 10 }
+        ];
+
+        const shopRewards = [
+            { text: "半下午轻度蓄能 (网游2局/视频1h)", cost: 120 },
+            { text: "黄金下午全面放松 (限时3-4h·严控频次)", cost: 260 },
+            { text: "周日血气回血补给 (大餐犒劳+赖床权)", cost: 200 }
+        ];
+
+        // 页面载入自动读取本地缓存
+        window.onload = function() {
+            const localData = localStorage.getItem("haoran_cyber_rpg");
+            if(localData) {
+                state = JSON.parse(localData);
+            }
+            const localToken = localStorage.getItem("haoran_sync_token");
+            if(localToken) {
+                document.getElementById("syncToken").value = localToken;
+            }
+            checkCronReset();
+            renderUI();
+        };
+
+        function saveLocal() {
+            localStorage.setItem("haoran_cyber_rpg", JSON.stringify(state));
+            const token = document.getElementById("syncToken").value;
+            if(token) localStorage.setItem("haoran_sync_token", token);
+        }
+
+        // 时间重置检测（周/月熔断逻辑）
+        function checkCronReset() {
+            const now = new Date();
+            // 获取当前是今年第几周
+            const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+            const weekStr = `${now.getFullYear()}-${weekNo}`;
+            const monthStr = `${now.getFullYear()}-${now.getMonth()+1}`;
+
+            // 周重置检测
+            if(state.last_log_week && state.last_log_week !== weekStr) {
+                if(now.getDay() === 1) { // 如果是周一
+                    logEvent(`🔄 【周清零】新周开启，上周剩余 ${state.weekly_cp} CP 熔断清空。`);
+                    state.weekly_cp = 0;
+                    state.weekly_matrix = { "Mon":[], "Tue":[], "Wed":[], "Thu":[], "Fri":[], "Sat":[], "Sun":[] };
+                    state.last_log_week = weekStr;
+                }
+            } else if(!state.last_log_week) {
+                state.last_log_week = weekStr;
+            }
+
+            // 月重置检测
+            if(state.last_log_month && state.last_log_month !== monthStr) {
+                updateLevel();
+                alert(`🏆 0854 月度大清算完成！\n\n当月累积算力: ${state.monthly_cp} CP\n天梯段位继承为: ${state.level}\n\n新一月算力已重置，继续保持！`);
+                logEvent(`🏆 【月度大总结】当月算力: ${state.monthly_cp} CP，晋升段位: ${state.level}`);
+                state.monthly_cp = 0;
+                state.last_log_month = monthStr;
+            } else if(!state.last_log_month) {
+                state.last_log_month = monthStr;
+            }
+            saveLocal();
+        }
+
+        function updateLevel() {
+            let cp = state.monthly_cp;
+            if (cp < 600) state.level = "青铜二战学者 🥉";
+            else if (cp < 1800) state.level = "白银无畏先锋 🥈";
+            else if (cp < 3000) state.level = "黄金控能大师 🥇";
+            else state.level = "王者上岸主宰 👑";
+        }
+
+        // 渲染界面UI
+        function renderUI() {
+            updateLevel();
+            document.getElementById("lblStreak").innerText = `${state.streak_days} 天`;
+            document.getElementById("lblWeekCp").innerText = `${state.weekly_cp} CP`;
+            document.getElementById("lblMonthCp").innerText = `${state.monthly_cp} CP`;
+            document.getElementById("lblLevel").innerText = state.level;
+
+            // 渲染日常任务列表
+            const taskContainer = document.getElementById("taskContainer");
+            taskContainer.innerHTML = dailyQuests.map(q => `
+                <label class="flex items-center justify-between bg-slate-950/40 p-2.5 rounded border border-slate-800 hover:border-slate-700 transition cursor-pointer">
+                    <div class="flex items-center space-x-2 text-xs">
+                        <input type="checkbox" id="${q.id}" class="rounded text-emerald-500 bg-slate-950 border-slate-700 focus:ring-0">
+                        <span>${q.text}</span>
+                    </div>
+                    <span class="text-xs font-bold text-emerald-400">+${q.pt} CP</span>
+                </label>
+            `).join('');
+
+            // 渲染商城列表
+            const rewardContainer = document.getElementById("rewardContainer");
+            rewardContainer.innerHTML = shopRewards.map(r => `
+                <button onclick="buyReward(${r.cost}, '${r.text}')" class="w-full flex justify-between items-center bg-slate-900/60 hover:bg-slate-800 border border-slate-800 text-left p-2 rounded text-xs transition text-cyan-400">
+                    <span>${r.text}</span>
+                    <span class="bg-cyan-950 px-2 py-0.5 rounded font-bold text-cyan-300">-${r.cost} CP</span>
+                </button>
+            `).join('');
+
+            // 渲染轨迹矩阵
+            const matrixContainer = document.getElementById("matrixContainer");
+            const now = new Date();
+            const todayIdx = (now.getDay() === 0) ? 6 : now.getDay() - 1;
+            matrixContainer.innerHTML = weekdayKeys.map((key, idx) => {
+                const tasks = state.weekly_matrix[key] || [];
+                const isDone = tasks.length > 0;
+                let bgStyle = "bg-slate-950 border-slate-800 text-slate-500";
+                if(isDone) bgStyle = "bg-emerald-950/80 border-emerald-500 text-emerald-400 font-bold";
+                else if(idx === todayIdx) bgStyle = "bg-cyan-950/40 border-cyan-500 text-cyan-400 font-bold animate-pulse";
+                
+                return `<button onclick="showDayDetails('${key}', ${idx})" class="border text-center py-2 rounded text-xs transition ${bgStyle}">${weekdayCn[idx]}</button>`;
+            }).join('');
+
+            // 渲染日志
+            const logPanel = document.getElementById("logPanel");
+            logPanel.innerHTML = [...state.history].reverse().map(l => `<p># ${l}</p>`).join('');
+        }
+
+        function showDayDetails(key, idx) {
+            const list = state.weekly_matrix[key] || [];
+            if(list.length > 0) alert(`【${weekdayCn[idx]}】通关副本记录：\n\n` + list.map(t => ` 🟢 ${t}`).join('\n'));
+            else alert(`【${weekdayCn[idx]}】当天暂无算力结算记录。`);
+        }
+
+        // 提交结算
+        function submitDailyQuests() {
+            const targetDayVal = document.querySelector('input[name="targetDay"]:checked').value;
+            const sleepStatus = document.querySelector('input[name="sleepStatus"]:checked').value;
+            
+            const now = new Date();
+            let currentDayIdx = (now.getDay() === 0) ? 6 : now.getDay() - 1;
+            if(targetDayVal === "yesterday") {
+                currentDayIdx = (currentDayIdx - 1 + 7) % 7;
+            }
+            const targetKey = weekdayKeys[currentDayIdx];
+            const targetCn = weekdayCn[currentDayIdx];
+
+            let earnedCp = 0;
+            let completedList = [];
+
+            // 1. 处理作息防线数据
+            if(sleepStatus === "ok") {
+                earnedCp += 20;
+                completedList.push("作息铁律达成(+20)");
+            } else if(sleepStatus === "fail") {
+                earnedCp -= 40;
+                completedList.push("作息崩盘重罚(-40)");
+                state.streak_days = 0; // 连击熔断
+            }
+
+            // 2. 处理常规课业
+            dailyQuests.forEach(q => {
+                const cb = document.getElementById(q.id);
+                if(cb && cb.checked) {
+                    earnedCp += q.pt;
+                    completedList.push(q.text.split(" ")[0]);
+                    cb.checked = false; // 重置勾选
+                }
+            });
+
+            if(completedList.length === 0) {
+                alert("你没有勾选任何作息或日常副本状态！");
+                return;
+            }
+
+            // 更新算力池
+            state.weekly_cp += earnedCp;
+            state.monthly_cp = Math.max(0, state.monthly_cp + earnedCp);
+            state.total_cp = Math.max(0, state.total_cp + earnedCp);
+            
+            // 如果作息没崩盘且勾选了核心学习任务，连击天数+1
+            if(sleepStatus === "ok" && completedList.length > 1 && targetDayVal === "today") {
+                state.streak_days += 1;
+            }
+
+            state.weekly_matrix[targetKey] = completedList;
+            
+            const timeStr = `${now.getMonth()+1}-${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            logEvent(`[${timeStr}] 注入【${targetCn}】数据！变动: ${earnedCp > 0 ? '+' : ''}${earnedCp} CP (${completedList.join(', ')})`);
+            
+            // 重置单选框
+            document.querySelector('input[name="sleepStatus"][value="none"]').checked = true;
+            
+            alert(`🚀 算力成功同步入库！净变动: ${earnedCp > 0 ? '+' : ''}${earnedCp} CP`);
+            saveLocal();
+            renderUI();
+        }
+
+        // 商城购买
+        function buyReward(cost, name) {
+            if(state.weekly_cp >= cost) {
+                state.weekly_cp -= cost;
+                state.monthly_cp = Math.max(0, state.monthly_cp - cost);
+                const now = new Date();
+                logEvent(`🛒 [商城消费] 兑换权限: 【${name}】 (-${cost} CP)`);
+                alert(`🎉 权限生成成功！去享受你的【${name}】吧，别有压力！`);
+                saveLocal();
+                renderUI();
+            } else {
+                alert(`🚨 算力赤字！当周算力不足以承载该权限！快去死磕数学真题！`);
+            }
+        }
+
+        // 惩罚机制
+        function triggerPunishment() {
+            if(confirm("🚨 警告：是否确定触发欲望防线过载（重大破戒）？此操作将实施严厉的重罚。")) {
+                state.weekly_cp = Math.max(0, state.weekly_cp - 150);
+                state.monthly_cp = Math.max(0, state.monthly_cp - 150);
+                state.streak_days = 0;
+                const now = new Date();
+                logEvent(`❌ 🔴 🚨 [致命熔断] 遭遇破戒能量冲击，重罚 -150 CP，连击中断。`);
+                alert("系统已强制执行冷水洗脸及熔断扣分。深呼吸，收拾战场，重新找回强火状态！");
+                saveLocal();
+                renderUI();
+            }
+        }
+
+        function logEvent(msg) {
+            state.history.push(msg);
+            if(state.history.length > 50) state.history.shift();
+        }
+
+        // ================= 云端双端同步核心逻辑 =================
+        // 使用免费开放的公共 Key-Value 存储 API 实现免账户跨端互通
+        const BASE_SYNC_URL = "https://keyvalue.immanuel.co/api/keyvalue";
+
+        async function uploadCloudData() {
+            const token = document.getElementById("syncToken").value.trim();
+            if(!token || token.length < 6) {
+                alert("请输入至少6位以上的专属同步暗号，保证数据不与他人冲突！");
+                return;
+            }
+            logEvent(`🌐 正在向云端备用防线传输数据...`);
+            renderUI();
+            
+            try {
+                const response = await fetch(`${BASE_SYNC_URL}/${token}/cyber_data`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(state)
+                });
+                if(response.ok) {
+                    localStorage.setItem("haoran_sync_token", token);
+                    alert("📤 云端数据同步锁生成成功！iPhone 端现在可以拉取同步了！");
+                    logEvent(`🌐 [云同步成功] 数据已备份至节点: ${token}`);
+                } else {
+                    alert("云端传输失败，请稍后重试。");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("网络连接异常，无法连通云端加密信道。");
+            }
+            renderUI();
+        }
+
+        async function downloadCloudData() {
+            const token = document.getElementById("syncToken").value.trim();
+            if(!token) {
+                alert("请输入你在另一端设置的专属同步暗号！");
+                return;
+            }
+            logEvent(`🌐 正在从云端信道提取数据包...`);
+            renderUI();
+
+            try {
+                const response = await fetch(`${BASE_SYNC_URL}/${token}/cyber_data`);
+                if(response.ok) {
+                    const cloudText = await response.text();
+                    if(cloudText && cloudText !== "Key not found") {
+                        state = JSON.parse(cloudText);
+                        saveLocal();
+                        alert("📥 核心算力池数据同步完成！双端状态已完美对齐！");
+                        logEvent(`🌐 [数据拉取成功] 已成功对齐云端镜像。`);
+                    } else {
+                        alert("云端未找到该暗号对应的有效数据包，请检查暗号是否在PC端上传过。");
+                    }
+                } else {
+                    alert("拉取数据失败，请确认网络环境。");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("云端信道遭遇阻塞，读取失败。");
+            }
+            renderUI();
+        }
+    </script>
+</body>
+</html>
